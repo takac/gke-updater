@@ -1,0 +1,32 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: updater
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      containers:
+        - name: updater
+          image: google/cloud-sdk:206.0.0
+          command:
+            - /bin/bash
+            - -c
+            - gcloud auth activate-service-account --key-file=/var/secrets/google/key.json && /bin/bash /updater/updater.sh
+          volumeMounts:
+            - name: updater-volume
+              mountPath: /updater/
+            - name: updater-svc-acc
+              mountPath: /var/secrets/google
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/google/key.json
+      volumes:
+        - name: updater-volume
+          configMap:
+            name: updater.sh
+        - name: updater-svc-acc
+          secret:
+            secretName: updater-svc-acc-key
+      restartPolicy: Never
